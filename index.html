@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bluesky Growth</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/1.2.1/chartjs-plugin-zoom.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #3b82f6;
+            --primary-light: #60a5fa;
+            --bg-dark: #111827;
+            --card-bg: #1f2937;
+            --card-hover: #374151;
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --success-color: #10b981;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .dashboard-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .title {
+            font-size: 1.875rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, var(--primary-color), var(--primary-light));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.025em;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary-color), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover::before {
+            transform: translateX(0);
+        }
+
+        .stat-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.2;
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+        }
+
+        .stat-value.positive {
+            color: var(--success-color);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        #lastUpdated {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        #lastUpdated::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: var(--success-color);
+            border-radius: 50%;
+            margin-right: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+
+        .zoom-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .zoom-reset {
+            background: linear-gradient(45deg, var(--primary-color), var(--primary-light));
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .zoom-reset:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        .zoom-reset:active {
+            transform: translateY(0);
+        }
+
+        .zoom-reset svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.5);
+                opacity: 0.5;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-container {
+                height: 300px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="dashboard-card">
+            <div class="header">
+                <h1 class="title">Bluesky Growth</h1>
+                <span id="lastUpdated"></span>
+            </div>
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-label">Total Users</div>
+                    <div class="stat-value" id="totalUsers">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Users Gained (24h)</div>
+                    <div class="stat-value positive" id="newUsers">-</div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="userChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="hourlyGainsChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let userChart, hourlyGainsChart;
+
+        function formatNumber(num) {
+            return new Intl.NumberFormat().format(num);
+        }
+
+        function initCharts() {
+            Chart.defaults.color = '#9ca3af';
+            Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
+
+            const userCtx = document.getElementById('userChart').getContext('2d');
+            userChart = new Chart(userCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Total Users',
+                        data: [],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHitRadius: 10
+                    }]
+                },
+                options: {
+                    animation: {
+                        duration: 0
+                    },
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                            titleColor: '#f3f4f6',
+                            bodyColor: '#f3f4f6',
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: false,
+                            callbacks: {
+                                label: function (context) {
+                                    return `Users: ${formatNumber(context.raw)}`;
+                                }
+                            }
+                        },
+                        zoom: {
+                            pan: {
+                                enabled: false,
+                            },
+                            zoom: {
+                                wheel: {
+                                    enabled: false,
+                                },
+                                pinch: {
+                                    enabled: true,
+                                },
+                                drag: {
+                                    enabled: true,
+                                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                                    borderColor: 'rgba(59, 130, 246, 0.4)',
+                                    borderWidth: 1,
+                                    threshold: 1
+                                },
+                                mode: 'x',
+                            },
+                            limits: {
+                                x: { min: 'original', max: 'original' },
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { maxTicksLimit: 8 }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { callback: formatNumber }
+                        }
+                    }
+                }
+            });
+
+            const zoomControls = document.createElement('div');
+            zoomControls.className = 'zoom-controls';
+
+            const resetZoomButton = document.createElement('button');
+            resetZoomButton.className = 'zoom-reset';
+            resetZoomButton.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                    <path d="M3 3v5h5"/>
+                </svg>
+                Reset Zoom
+            `;
+            resetZoomButton.onclick = () => {
+                userChart.resetZoom();
+            };
+
+            zoomControls.appendChild(resetZoomButton);
+            userChart.canvas.parentNode.appendChild(zoomControls);
+
+            const hourlyCtx = document.getElementById('hourlyGainsChart').getContext('2d');
+            hourlyGainsChart = new Chart(hourlyCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Hour Gains',
+                        data: [],
+                        backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                        borderColor: '#3b82f6',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    animation: {
+                        duration: 0
+                    },
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                            titleColor: '#f3f4f6',
+                            bodyColor: '#f3f4f6',
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { maxTicksLimit: 8 }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { callback: formatNumber }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function fetchData() {
+            try {
+                const response = await fetch('https://api.communitrics.com/bsky');
+                const data = await response.json();
+
+                if (data.length > 0) {
+                    const latestData = data[data.length - 1];
+                    const currentUsers = parseInt(latestData.users);
+
+                    const twentyFourHoursAgo = new Date(new Date().getTime() - (24 * 60 * 60 * 1000));
+                    let compareData = data[0];
+                    for (let i = 0; i < data.length; i++) {
+                        if (new Date(data[i].timestamp) >= twentyFourHoursAgo) {
+                            compareData = data[Math.max(0, i - 1)];
+                            break;
+                        }
+                    }
+
+                    const usersGained = currentUsers - parseInt(compareData.users);
+                    document.getElementById('totalUsers').textContent = formatNumber(currentUsers);
+                    document.getElementById('newUsers').textContent = `+${formatNumber(usersGained)}`;
+                    document.getElementById('lastUpdated').textContent = `Last updated: ${new Date(latestData.timestamp).toLocaleString()}`;
+
+                    userChart.data.labels = data.map(point => new Date(point.timestamp).toLocaleString());
+                    userChart.data.datasets[0].data = data.map(point => parseInt(point.users));
+
+                    const hourlyGains = Array(24).fill(0);
+                    const hourlyLabels = [];
+                    const now = new Date();
+                    for (let i = 0; i < 24; i++) {
+                        const startOfHour = new Date(now.setHours(i, 0, 0, 0));
+                        const endOfHour = new Date(now.setHours(i + 1, 0, 0, 0));
+                        hourlyLabels.push(`${startOfHour.getHours()}:00 - ${endOfHour.getHours()}:00`);
+
+                        const usersForThisHour = data.filter(point => {
+                            const pointTime = new Date(point.timestamp);
+                            return pointTime >= startOfHour && pointTime < endOfHour;
+                        });
+                        if (usersForThisHour.length > 0) {
+                            const usersAtStart = parseInt(usersForThisHour[0].users);
+                            const usersAtEnd = parseInt(usersForThisHour[usersForThisHour.length - 1].users);
+                            hourlyGains[i] = usersAtEnd - usersAtStart;
+                        }
+                    }
+
+                    hourlyGainsChart.data.labels = hourlyLabels;
+                    hourlyGainsChart.data.datasets[0].data = hourlyGains;
+
+                    userChart.update('none');
+                    hourlyGainsChart.update('none');
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        initCharts();
+        fetchData();
+        setInterval(fetchData, 5000);
+    </script>
+</body>
+
+</html>
