@@ -7,7 +7,13 @@
     <title>Bluesky Growth</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/1.2.1/chartjs-plugin-zoom.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/odometer@0.4.8/themes/odometer-theme-minimal.css">
+    <script src="https://cdn.jsdelivr.net/npm/odometer@0.4.8/odometer.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+
     <style>
         :root {
             --primary-color: #3b82f6;
@@ -27,7 +33,7 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: 'Inter', sans-serif;
             background: var(--bg-dark);
             color: var(--text-primary);
             line-height: 1.6;
@@ -44,7 +50,7 @@
         @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateY(25px);
             }
 
             to {
@@ -64,7 +70,6 @@
         }
 
         .dashboard-card:hover {
-            transform: translateY(-2px);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
                 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
@@ -123,7 +128,7 @@
 
         .stat-card:hover {
             background: rgba(255, 255, 255, 0.08);
-            transform: translateY(-2px);
+            transform: translateY(-1px);
         }
 
         .stat-label {
@@ -145,6 +150,19 @@
         }
 
         .stat-value.positive {
+            color: var(--success-color);
+        }
+
+        .odometer {
+            font-size: 2rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+
+        .prefix {
+            font-size: 2rem;
+            line-height: 1.2;
+            font-weight: 700;
             color: var(--success-color);
         }
 
@@ -186,6 +204,7 @@
             display: flex;
             gap: 8px;
             z-index: 10;
+            pointer-events: auto;
         }
 
         .zoom-reset {
@@ -266,11 +285,16 @@
             <div class="stats">
                 <div class="stat-card">
                     <div class="stat-label">Total Users</div>
-                    <div class="stat-value" id="totalUsers">-</div>
+                    <div class="stat-value">
+                        <div id="totalUsers" class="odometer">0</div>
+                    </div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Users Gained (24h)</div>
-                    <div class="stat-value positive" id="newUsers">-</div>
+                    <div class="stat-value positive">
+                        <span class="prefix">+</span>
+                        <div id="newUsers" class="odometer">0</div>
+                    </div>
                 </div>
             </div>
             <div class="chart-container">
@@ -284,12 +308,34 @@
 
     <script>
         let userChart, hourlyGainsChart;
+        let totalUsersOdo, newUsersOdo;
 
         function formatNumber(num) {
             return new Intl.NumberFormat().format(num);
         }
 
+        function formatDateTime(date) {
+            return {
+                date: date.toLocaleDateString(),
+                time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+        }
+
         function initCharts() {
+            totalUsersOdo = new Odometer({
+                el: document.getElementById('totalUsers'),
+                value: 0,
+                format: ',ddd',
+                theme: 'minimal'
+            });
+
+            newUsersOdo = new Odometer({
+                el: document.getElementById('newUsers'),
+                value: 0,
+                format: ',ddd',
+                theme: 'minimal'
+            });
+
             Chart.defaults.color = '#9ca3af';
             Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
 
@@ -331,8 +377,18 @@
                             padding: 12,
                             displayColors: false,
                             callbacks: {
+                                title: function (tooltipItems) {
+                                    const date = new Date(tooltipItems[0].raw.x);
+                                    return date.toLocaleDateString("en-US", {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        year: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    });
+                                },
                                 label: function (context) {
-                                    return `Users: ${formatNumber(context.raw)}`;
+                                    return `Users: ${formatNumber(context.raw.y)}`;
                                 }
                             }
                         },
@@ -363,8 +419,19 @@
                     },
                     scales: {
                         x: {
+                            type: 'time',
+                            time: {
+                                unit: 'hour',
+                                displayFormats: {
+                                    hour: 'MMM d, HH:mm'
+                                }
+                            },
                             grid: { display: false },
-                            ticks: { maxTicksLimit: 8 }
+                            ticks: {
+                                maxTicksLimit: 8,
+                            },
+                            min: new Date(Date.now() - (24 * 60 * 60 * 1000)),
+                            max: new Date()
                         },
                         y: {
                             grid: { color: 'rgba(255, 255, 255, 0.05)' },
@@ -458,8 +525,10 @@
                     }
 
                     const usersGained = currentUsers - parseInt(compareData.users);
-                    document.getElementById('totalUsers').textContent = formatNumber(currentUsers);
-                    document.getElementById('newUsers').textContent = `+${formatNumber(usersGained)}`;
+
+                    totalUsersOdo.update(currentUsers);
+                    newUsersOdo.update(usersGained);
+
                     document.getElementById('lastUpdated').textContent = `Last updated: ${new Date(latestData.timestamp).toLocaleString()}`;
 
                     userChart.data.labels = data.map(point => new Date(point.timestamp).toLocaleString());
@@ -487,6 +556,11 @@
                     hourlyGainsChart.data.labels = hourlyLabels;
                     hourlyGainsChart.data.datasets[0].data = hourlyGains;
 
+                    userChart.data.datasets[0].data = data.map(point => ({
+                        x: new Date(point.timestamp).getTime(),
+                        y: parseInt(point.users)
+                    }));
+
                     userChart.update('none');
                     hourlyGainsChart.update('none');
                 }
@@ -495,9 +569,11 @@
             }
         }
 
-        initCharts();
-        fetchData();
-        setInterval(fetchData, 5000);
+        window.addEventListener('load', function () {
+            initCharts();
+            fetchData();
+            setInterval(fetchData, 5000);
+        });
     </script>
 </body>
 
