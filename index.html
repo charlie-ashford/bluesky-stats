@@ -261,6 +261,96 @@
             height: 16px;
         }
 
+        .table-container {
+            margin-top: 2rem;
+            overflow-x: auto;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: var(--font-numbers);
+            font-size: 0.9rem;
+        }
+
+        .data-table th {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            text-align: left;
+            font-family: var(--font-display);
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+
+        .data-table td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            vertical-align: middle;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .timestamp-cell {
+            font-family: var(--font-numbers);
+            white-space: nowrap;
+            color: var(--text-secondary);
+        }
+
+        .users-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .total-users {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .gains-info {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .gain-value {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .gain-value.positive {
+            color: #22c55e;
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        .gain-value.negative {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .gain-value.change-neutral {
+            color: var(--text-secondary);
+            background: rgba(156, 163, 175, 0.1);
+        }
+
         @keyframes pulse {
             0% {
                 transform: scale(1);
@@ -338,6 +428,17 @@
             <div class="chart-container">
                 <canvas id="hourlyGainsChart"></canvas>
             </div>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Users</th>
+                        </tr>
+                    </thead>
+                    <tbody id="hourlyTableBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -350,6 +451,24 @@
         function formatNumber(num) {
             return new Intl.NumberFormat().format(num);
         }
+
+        function getChangeArrow(value) {
+            if (value > 0) {
+                return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m5 12 7-7 7 7"/>
+            <path d="M12 19V5"/>
+        </svg>`;
+            } else if (value < 0) {
+                return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 5v14"/>
+            <path d="m19 12-7 7-7-7"/>
+        </svg>`;
+            }
+            return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14"/>
+    </svg>`;
+        }
+
 
         function formatDateTime(date) {
             return {
@@ -570,9 +689,91 @@
                     const latestData = data[data.length - 1];
                     const currentUsers = parseInt(latestData.users);
 
-                    const twentyFourHoursAgo = new Date(
-                        new Date().getTime() - 24 * 60 * 60 * 1000
-                    );
+                    const earliestTimestamp = new Date(data[0].timestamp);
+                    const latestTimestamp = new Date(latestData.timestamp);
+
+                    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+                    const minTime = earliestTimestamp > twentyFourHoursAgo ? earliestTimestamp : twentyFourHoursAgo;
+                    const maxTime = latestTimestamp;
+
+                    userChart.options.scales.x.min = minTime;
+                    userChart.options.scales.x.max = maxTime;
+
+                    userChart.data.datasets[0].data = data.map(point => ({
+                        x: new Date(point.timestamp).getTime(),
+                        y: parseInt(point.users),
+                    }));
+
+                    const hourlyData = new Map();
+                    for (let i = 0; i < data.length; i++) {
+                        const point = data[i];
+                        const timestamp = new Date(point.timestamp);
+                        const hourStart = new Date(timestamp).setMinutes(0, 0, 0);
+                        hourlyData.set(hourStart, {
+                            timestamp: timestamp,
+                            users: parseInt(point.users),
+                        });
+                    }
+
+                    const sortedHourlyPoints = Array.from(hourlyData.entries())
+                        .sort((a, b) => b[0] - a[0])
+                        .map(([hour, data]) => data);
+
+                    const tableData = sortedHourlyPoints.map((point, index) => {
+                        let gains = 0;
+                        let changeInGains = 0;
+
+                        if (index < sortedHourlyPoints.length - 1) {
+                            gains = point.users - sortedHourlyPoints[index + 1].users;
+
+                            if (index < sortedHourlyPoints.length - 2) {
+                                const previousGains = sortedHourlyPoints[index + 1].users - sortedHourlyPoints[index + 2].users;
+                                changeInGains = gains - previousGains;
+                            }
+                        }
+
+                        return {
+                            timestamp: point.timestamp,
+                            users: point.users,
+                            gains: gains,
+                            changeInGains: changeInGains,
+                        };
+                    });
+
+                    const tableBody = document.getElementById('hourlyTableBody');
+                    tableBody.innerHTML = tableData.map(row => {
+                        const { date, time } = formatDateTime(row.timestamp);
+                        const gainClass = row.gains >= 0 ? 'positive' : 'negative';
+                        const changeClass = row.changeInGains > 0 ? 'positive' :
+                            row.changeInGains < 0 ? 'negative' : 'change-neutral';
+
+                        return `
+                    <tr>
+                        <td class="timestamp-cell">
+                            <div style="font-size: 1.1rem; margin-bottom: 0.25rem;">${time}</div>
+                            <div style="opacity: 0.7">${date}</div>
+                        </td>
+                        <td>
+                            <div class="users-cell">
+                                <div class="total-users">${formatNumber(row.users)}</div>
+                                <div class="gains-info">
+                                    <div class="gain-value ${gainClass}">
+                                        ${getChangeArrow(row.gains)}
+                                        ${formatNumber(Math.abs(row.gains))}
+                                    </div>
+                                    <div class="gain-value ${changeClass}">
+                                        ${getChangeArrow(row.changeInGains)}
+                                        ${formatNumber(Math.abs(row.changeInGains))}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                    }).join('');
+
+                    totalUsersOdo.update(currentUsers);
+
                     let compareData = data[0];
                     for (let i = 0; i < data.length; i++) {
                         if (new Date(data[i].timestamp) >= twentyFourHoursAgo) {
@@ -582,46 +783,29 @@
                     }
 
                     const usersGained = currentUsers - parseInt(compareData.users);
-
-                    totalUsersOdo.update(currentUsers);
                     newUsersOdo.update(usersGained);
 
-                    document.getElementById(
-                        'lastUpdated'
-                    ).textContent = `Last updated: ${new Date(
-                        latestData.timestamp
-                    ).toLocaleString()}`;
+                    document.getElementById('lastUpdated').textContent =
+                        `Last updated: ${new Date(latestData.timestamp).toLocaleString()}`;
 
                     const hourlyGains = Array(24).fill(0);
                     const hourlyLabels = [];
                     const now = new Date();
-                    for (let i = 0; i < 24; i++) {
-                        const startOfHour = new Date(now.setHours(i, 0, 0, 0));
-                        const endOfHour = new Date(now.setHours(i + 1, 0, 0, 0));
-                        hourlyLabels.push(
-                            `${startOfHour.getHours()}:00 - ${endOfHour.getHours()}:00`
-                        );
 
-                        const usersForThisHour = data.filter(point => {
-                            const pointTime = new Date(point.timestamp);
-                            return pointTime >= startOfHour && pointTime < endOfHour;
-                        });
-                        if (usersForThisHour.length > 0) {
-                            const usersAtStart = parseInt(usersForThisHour[0].users);
-                            const usersAtEnd = parseInt(
-                                usersForThisHour[usersForThisHour.length - 1].users
-                            );
-                            hourlyGains[i] = usersAtEnd - usersAtStart;
+                    for (let i = 0; i < 24; i++) {
+                        const hour = now.getHours() - i;
+                        const hourTime = new Date(now).setHours(hour, 0, 0, 0);
+                        const hourLabel = `${(hour + 24) % 24}:00`;
+                        hourlyLabels.unshift(hourLabel);
+
+                        const hourData = hourlyData.get(hourTime);
+                        if (hourData && i < tableData.length - 1) {
+                            hourlyGains[23 - i] = tableData[i].gains;
                         }
                     }
 
                     hourlyGainsChart.data.labels = hourlyLabels;
                     hourlyGainsChart.data.datasets[0].data = hourlyGains;
-
-                    userChart.data.datasets[0].data = data.map(point => ({
-                        x: new Date(point.timestamp).getTime(),
-                        y: parseInt(point.users),
-                    }));
 
                     userChart.update('none');
                     hourlyGainsChart.update('none');
