@@ -691,14 +691,12 @@
 
                     const earliestTimestamp = new Date(data[0].timestamp);
                     const latestTimestamp = new Date(latestData.timestamp);
-
                     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
                     const minTime = earliestTimestamp > twentyFourHoursAgo ? earliestTimestamp : twentyFourHoursAgo;
                     const maxTime = latestTimestamp;
-
                     userChart.options.scales.x.min = minTime;
                     userChart.options.scales.x.max = maxTime;
-
                     userChart.data.datasets[0].data = data.map(point => ({
                         x: new Date(point.timestamp).getTime(),
                         y: parseInt(point.users),
@@ -708,30 +706,24 @@
                     for (let i = 0; i < data.length; i++) {
                         const point = data[i];
                         const timestamp = new Date(point.timestamp);
-                        const hourStart = new Date(timestamp).setMinutes(0, 0, 0);
-                        hourlyData.set(hourStart, {
-                            timestamp: timestamp,
+                        const hourStart = new Date(timestamp.getFullYear(), timestamp.getMonth(), timestamp.getDate(), timestamp.getHours(), 0, 0, 0);
+                        hourlyData.set(hourStart.getTime(), {
+                            timestamp: hourStart,
                             users: parseInt(point.users),
                         });
                     }
-
-                    const sortedHourlyPoints = Array.from(hourlyData.entries())
-                        .sort((a, b) => b[0] - a[0])
-                        .map(([hour, data]) => data);
-
+                    const sortedHourlyPoints = Array.from(hourlyData.values())
+                        .sort((a, b) => b.timestamp - a.timestamp);
                     const tableData = sortedHourlyPoints.map((point, index) => {
                         let gains = 0;
                         let changeInGains = 0;
-
                         if (index < sortedHourlyPoints.length - 1) {
                             gains = point.users - sortedHourlyPoints[index + 1].users;
-
                             if (index < sortedHourlyPoints.length - 2) {
                                 const previousGains = sortedHourlyPoints[index + 1].users - sortedHourlyPoints[index + 2].users;
                                 changeInGains = gains - previousGains;
                             }
                         }
-
                         return {
                             timestamp: point.timestamp,
                             users: point.users,
@@ -746,30 +738,29 @@
                         const gainClass = row.gains >= 0 ? 'positive' : 'negative';
                         const changeClass = row.changeInGains > 0 ? 'positive' :
                             row.changeInGains < 0 ? 'negative' : 'change-neutral';
-
                         return `
-                    <tr>
-                        <td class="timestamp-cell">
-                            <div style="font-size: 1.1rem; margin-bottom: 0.25rem;">${time}</div>
-                            <div style="opacity: 0.7">${date}</div>
-                        </td>
-                        <td>
-                            <div class="users-cell">
-                                <div class="total-users">${formatNumber(row.users)}</div>
-                                <div class="gains-info">
-                                    <div class="gain-value ${gainClass}">
-                                        ${getChangeArrow(row.gains)}
-                                        ${formatNumber(Math.abs(row.gains))}
+                            <tr>
+                                <td class="timestamp-cell">
+                                    <div style="font-size: 1.1rem; margin-bottom: 0.25rem;">${time}</div>
+                                    <div style="opacity: 0.7">${date}</div>
+                                </td>
+                                <td>
+                                    <div class="users-cell">
+                                        <div class="total-users">${formatNumber(row.users)}</div>
+                                        <div class="gains-info">
+                                            <div class="gain-value ${gainClass}">
+                                                ${getChangeArrow(row.gains)}
+                                                ${formatNumber(Math.abs(row.gains))}
+                                            </div>
+                                            <div class="gain-value ${changeClass}">
+                                                ${getChangeArrow(row.changeInGains)}
+                                                ${formatNumber(Math.abs(row.changeInGains))}
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="gain-value ${changeClass}">
-                                        ${getChangeArrow(row.changeInGains)}
-                                        ${formatNumber(Math.abs(row.changeInGains))}
-                                    </div>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                `;
+                                </td>
+                            </tr>
+                        `;
                     }).join('');
 
                     totalUsersOdo.update(currentUsers);
