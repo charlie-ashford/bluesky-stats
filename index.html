@@ -2,19 +2,19 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bluesky Growth</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
     <script
         src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/1.2.1/chartjs-plugin-zoom.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/odometer@0.4.8/themes/odometer-theme-minimal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/odometer@0.4.8/themes/odometer-theme-minimal.css" />
     <script src="https://cdn.jsdelivr.net/npm/odometer@0.4.8/odometer.min.js"></script>
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap"
-        rel="stylesheet">
+        rel="stylesheet" />
 
     <style>
         :root {
@@ -97,7 +97,9 @@
             font-family: var(--font-display);
             font-size: 2.25rem;
             font-weight: 700;
-            background: linear-gradient(45deg, var(--primary-color), var(--primary-light));
+            background: linear-gradient(45deg,
+                    var(--primary-color),
+                    var(--primary-light));
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -227,7 +229,9 @@
 
         .zoom-reset {
             font-family: var(--font-display);
-            background: linear-gradient(45deg, var(--primary-color), var(--primary-light));
+            background: linear-gradient(45deg,
+                    var(--primary-color),
+                    var(--primary-light));
             color: white;
             border: none;
             padding: 0.5rem 1rem;
@@ -350,7 +354,10 @@
         function formatDateTime(date) {
             return {
                 date: date.toLocaleDateString(),
-                time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                time: date.toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                }),
             };
         }
 
@@ -359,17 +366,16 @@
                 el: document.getElementById('totalUsers'),
                 value: 0,
                 format: ',ddd',
-                theme: 'minimal'
+                theme: 'minimal',
             });
 
             newUsersOdo = new Odometer({
                 el: document.getElementById('newUsers'),
                 value: 0,
                 format: ',ddd',
-                theme: 'minimal'
+                theme: 'minimal',
             });
 
-            // Create zoom controls
             const zoomControls = document.createElement('div');
             zoomControls.className = 'zoom-controls';
 
@@ -388,7 +394,6 @@
                 resetZoomButton.style.display = 'none';
             };
 
-            // Insert zoom controls before the first chart container
             const firstChartContainer = document.querySelector('.chart-container');
             firstChartContainer.insertAdjacentElement('beforebegin', zoomControls);
             zoomControls.appendChild(resetZoomButton);
@@ -401,27 +406,29 @@
                 type: 'line',
                 data: {
                     labels: [],
-                    datasets: [{
-                        label: 'Total Users',
-                        data: [],
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 0,
-                        pointHitRadius: 10
-                    }]
+                    datasets: [
+                        {
+                            label: 'Total Users',
+                            data: [],
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 0,
+                            pointHitRadius: 10,
+                        },
+                    ],
                 },
                 options: {
                     animation: {
-                        duration: 0
+                        duration: 0,
                     },
                     responsive: true,
                     maintainAspectRatio: false,
                     interaction: {
                         intersect: false,
-                        mode: 'index'
+                        mode: 'index',
                     },
                     plugins: {
                         legend: { display: false },
@@ -436,18 +443,18 @@
                             callbacks: {
                                 title: function (tooltipItems) {
                                     const date = new Date(tooltipItems[0].raw.x);
-                                    return date.toLocaleDateString("en-US", {
+                                    return date.toLocaleDateString('en-US', {
                                         month: 'short',
                                         day: 'numeric',
                                         year: 'numeric',
                                         hour: '2-digit',
-                                        minute: '2-digit'
+                                        minute: '2-digit',
                                     });
                                 },
                                 label: function (context) {
                                     return `Users: ${formatNumber(context.raw.y)}`;
-                                }
-                            }
+                                },
+                            },
                         },
                         zoom: {
                             pan: {
@@ -465,7 +472,7 @@
                                     backgroundColor: 'rgba(59, 130, 246, 0.2)',
                                     borderColor: 'rgba(59, 130, 246, 0.4)',
                                     borderWidth: 1,
-                                    threshold: 1
+                                    threshold: 1,
                                 },
                                 mode: 'x',
                                 onZoomStart: () => {
@@ -473,12 +480,12 @@
                                         isChartZoomed = true;
                                         resetZoomButton.style.display = 'flex';
                                     }
-                                }
+                                },
                             },
                             limits: {
                                 x: { min: 'original', max: 'original' },
-                            }
-                        }
+                            },
+                        },
                     },
                     scales: {
                         x: {
@@ -486,41 +493,45 @@
                             time: {
                                 unit: 'hour',
                                 displayFormats: {
-                                    hour: 'MMM d, HH:mm'
-                                }
+                                    hour: 'MMM d, HH:mm',
+                                },
                             },
                             grid: { display: false },
                             ticks: {
                                 maxTicksLimit: 8,
                             },
-                            min: new Date(Date.now() - (24 * 60 * 60 * 1000)),
-                            max: new Date()
+                            min: new Date(Date.now() - 24 * 60 * 60 * 1000),
+                            max: new Date(),
                         },
                         y: {
                             grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                            ticks: { callback: formatNumber }
-                        }
-                    }
-                }
+                            ticks: { callback: formatNumber },
+                        },
+                    },
+                },
             });
 
-            const hourlyCtx = document.getElementById('hourlyGainsChart').getContext('2d');
+            const hourlyCtx = document
+                .getElementById('hourlyGainsChart')
+                .getContext('2d');
             hourlyGainsChart = new Chart(hourlyCtx, {
                 type: 'bar',
                 data: {
                     labels: [],
-                    datasets: [{
-                        label: 'Hour Gains',
-                        data: [],
-                        backgroundColor: 'rgba(59, 130, 246, 0.5)',
-                        borderColor: '#3b82f6',
-                        borderWidth: 1,
-                        borderRadius: 4
-                    }]
+                    datasets: [
+                        {
+                            label: 'Hour Gains',
+                            data: [],
+                            backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                            borderColor: '#3b82f6',
+                            borderWidth: 1,
+                            borderRadius: 4,
+                        },
+                    ],
                 },
                 options: {
                     animation: {
-                        duration: 0
+                        duration: 0,
                     },
                     responsive: true,
                     maintainAspectRatio: false,
@@ -533,20 +544,20 @@
                             borderColor: 'rgba(255, 255, 255, 0.1)',
                             borderWidth: 1,
                             padding: 12,
-                            displayColors: false
-                        }
+                            displayColors: false,
+                        },
                     },
                     scales: {
                         x: {
                             grid: { display: false },
-                            ticks: { maxTicksLimit: 8 }
+                            ticks: { maxTicksLimit: 8 },
                         },
                         y: {
                             grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                            ticks: { callback: formatNumber }
-                        }
-                    }
-                }
+                            ticks: { callback: formatNumber },
+                        },
+                    },
+                },
             });
         }
 
@@ -559,7 +570,9 @@
                     const latestData = data[data.length - 1];
                     const currentUsers = parseInt(latestData.users);
 
-                    const twentyFourHoursAgo = new Date(new Date().getTime() - (24 * 60 * 60 * 1000));
+                    const twentyFourHoursAgo = new Date(
+                        new Date().getTime() - 24 * 60 * 60 * 1000
+                    );
                     let compareData = data[0];
                     for (let i = 0; i < data.length; i++) {
                         if (new Date(data[i].timestamp) >= twentyFourHoursAgo) {
@@ -573,7 +586,11 @@
                     totalUsersOdo.update(currentUsers);
                     newUsersOdo.update(usersGained);
 
-                    document.getElementById('lastUpdated').textContent = `Last updated: ${new Date(latestData.timestamp).toLocaleString()}`;
+                    document.getElementById(
+                        'lastUpdated'
+                    ).textContent = `Last updated: ${new Date(
+                        latestData.timestamp
+                    ).toLocaleString()}`;
 
                     const hourlyGains = Array(24).fill(0);
                     const hourlyLabels = [];
@@ -581,7 +598,9 @@
                     for (let i = 0; i < 24; i++) {
                         const startOfHour = new Date(now.setHours(i, 0, 0, 0));
                         const endOfHour = new Date(now.setHours(i + 1, 0, 0, 0));
-                        hourlyLabels.push(`${startOfHour.getHours()}:00 - ${endOfHour.getHours()}:00`);
+                        hourlyLabels.push(
+                            `${startOfHour.getHours()}:00 - ${endOfHour.getHours()}:00`
+                        );
 
                         const usersForThisHour = data.filter(point => {
                             const pointTime = new Date(point.timestamp);
@@ -589,7 +608,9 @@
                         });
                         if (usersForThisHour.length > 0) {
                             const usersAtStart = parseInt(usersForThisHour[0].users);
-                            const usersAtEnd = parseInt(usersForThisHour[usersForThisHour.length - 1].users);
+                            const usersAtEnd = parseInt(
+                                usersForThisHour[usersForThisHour.length - 1].users
+                            );
                             hourlyGains[i] = usersAtEnd - usersAtStart;
                         }
                     }
@@ -599,7 +620,7 @@
 
                     userChart.data.datasets[0].data = data.map(point => ({
                         x: new Date(point.timestamp).getTime(),
-                        y: parseInt(point.users)
+                        y: parseInt(point.users),
                     }));
 
                     userChart.update('none');
