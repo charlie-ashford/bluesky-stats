@@ -12,7 +12,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/1.2.1/chartjs-plugin-zoom.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/odometer@0.4.8/themes/odometer-theme-minimal.css">
     <script src="https://cdn.jsdelivr.net/npm/odometer@0.4.8/odometer.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
 
     <style>
         :root {
@@ -24,6 +26,12 @@
             --text-primary: #f3f4f6;
             --text-secondary: #9ca3af;
             --success-color: #10b981;
+
+            --font-display: 'Poppins', system-ui, sans-serif;
+            --font-ui: 'Manrope', system-ui, sans-serif;
+            --font-body: 'Inter', system-ui, sans-serif;
+            --font-headings: 'Work Sans', system-ui, sans-serif;
+            --font-numbers: 'Roboto Mono', monospace;
         }
 
         * {
@@ -33,12 +41,14 @@
         }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: var(--font-body);
             background: var(--bg-dark);
             color: var(--text-primary);
             line-height: 1.6;
             padding: 2rem;
             min-height: 100vh;
+            font-weight: 400;
+            letter-spacing: -0.01em;
         }
 
         .container {
@@ -50,7 +60,7 @@
         @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: translateY(25px);
+                transform: translateY(15px);
             }
 
             to {
@@ -84,13 +94,14 @@
         }
 
         .title {
-            font-size: 1.875rem;
+            font-family: var(--font-display);
+            font-size: 2.25rem;
             font-weight: 700;
             background: linear-gradient(45deg, var(--primary-color), var(--primary-light));
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
-            letter-spacing: -0.025em;
+            letter-spacing: -0.03em;
         }
 
         .stats {
@@ -132,21 +143,25 @@
         }
 
         .stat-label {
+            font-family: var(--font-display);
             font-size: 0.875rem;
+            font-weight: 500;
             color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
         }
 
         .stat-value {
-            font-size: 2rem;
+            font-size: 2.5rem;
             font-weight: 700;
             color: var(--text-primary);
-            line-height: 1.2;
+            line-height: 1;
             display: flex;
             align-items: baseline;
             gap: 0.5rem;
+            font-family: var(--font-numbers);
+            letter-spacing: -0.03em;
         }
 
         .stat-value.positive {
@@ -154,36 +169,43 @@
         }
 
         .odometer {
-            font-size: 2rem;
-            line-height: 1.2;
+            font-family: var(--font-numbers);
+            font-size: 2.5rem;
+            line-height: 1;
             font-weight: 700;
+            letter-spacing: -0.03em;
         }
 
         .prefix {
-            font-size: 2rem;
-            line-height: 1.2;
+            font-family: var(--font-numbers);
+            font-size: 2.5rem;
+            line-height: 1;
             font-weight: 700;
             color: var(--success-color);
+            letter-spacing: -0.03em;
         }
 
         .chart-container {
             position: relative;
             height: 400px;
             margin-top: 2rem;
-            padding: 1rem;
+            padding: 1.5rem;
             background: rgba(255, 255, 255, 0.02);
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         #lastUpdated {
+            font-family: var(--font-headings);
             font-size: 0.875rem;
+            font-weight: 500;
             color: var(--text-secondary);
             background: rgba(255, 255, 255, 0.05);
             padding: 0.5rem 1rem;
             border-radius: 9999px;
             display: inline-flex;
             align-items: center;
+            letter-spacing: 0;
         }
 
         #lastUpdated::before {
@@ -198,37 +220,36 @@
         }
 
         .zoom-controls {
-            position: absolute;
-            top: 10px;
-            right: 10px;
             display: flex;
-            gap: 8px;
-            z-index: 10;
-            pointer-events: auto;
+            justify-content: flex-end;
+            margin-bottom: -1.2rem;
         }
 
         .zoom-reset {
+            font-family: var(--font-display);
             background: linear-gradient(45deg, var(--primary-color), var(--primary-light));
             color: white;
             border: none;
-            padding: 8px 16px;
+            padding: 0.5rem 1rem;
             border-radius: 8px;
             cursor: pointer;
-            font-weight: 500;
+            font-weight: 600;
+            font-size: 0.875rem;
             transition: all 0.3s ease;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            display: flex;
+            display: none;
             align-items: center;
-            gap: 6px;
+            gap: 0.5rem;
+            animation: fadeIn 0.3s ease-out;
+            letter-spacing: -0.01em;
         }
 
         .zoom-reset:hover {
-            transform: translateY(-1px);
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
         }
 
         .zoom-reset:active {
-            transform: translateY(0);
+            transform: translateY(1px);
         }
 
         .zoom-reset svg {
@@ -271,6 +292,16 @@
                 gap: 1rem;
                 align-items: flex-start;
             }
+
+            .title {
+                font-size: 1.875rem;
+            }
+
+            .stat-value,
+            .odometer,
+            .prefix {
+                font-size: 2rem;
+            }
         }
     </style>
 </head>
@@ -309,6 +340,8 @@
     <script>
         let userChart, hourlyGainsChart;
         let totalUsersOdo, newUsersOdo;
+        let resetZoomButton;
+        let isChartZoomed = false;
 
         function formatNumber(num) {
             return new Intl.NumberFormat().format(num);
@@ -335,6 +368,30 @@
                 format: ',ddd',
                 theme: 'minimal'
             });
+
+            // Create zoom controls
+            const zoomControls = document.createElement('div');
+            zoomControls.className = 'zoom-controls';
+
+            resetZoomButton = document.createElement('button');
+            resetZoomButton.className = 'zoom-reset';
+            resetZoomButton.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                    <path d="M3 3v5h5"/>
+                </svg>
+                Reset Zoom
+            `;
+            resetZoomButton.onclick = () => {
+                userChart.resetZoom();
+                isChartZoomed = false;
+                resetZoomButton.style.display = 'none';
+            };
+
+            // Insert zoom controls before the first chart container
+            const firstChartContainer = document.querySelector('.chart-container');
+            firstChartContainer.insertAdjacentElement('beforebegin', zoomControls);
+            zoomControls.appendChild(resetZoomButton);
 
             Chart.defaults.color = '#9ca3af';
             Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
@@ -411,6 +468,12 @@
                                     threshold: 1
                                 },
                                 mode: 'x',
+                                onZoomStart: () => {
+                                    if (!isChartZoomed) {
+                                        isChartZoomed = true;
+                                        resetZoomButton.style.display = 'flex';
+                                    }
+                                }
                             },
                             limits: {
                                 x: { min: 'original', max: 'original' },
@@ -440,25 +503,6 @@
                     }
                 }
             });
-
-            const zoomControls = document.createElement('div');
-            zoomControls.className = 'zoom-controls';
-
-            const resetZoomButton = document.createElement('button');
-            resetZoomButton.className = 'zoom-reset';
-            resetZoomButton.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                    <path d="M3 3v5h5"/>
-                </svg>
-                Reset Zoom
-            `;
-            resetZoomButton.onclick = () => {
-                userChart.resetZoom();
-            };
-
-            zoomControls.appendChild(resetZoomButton);
-            userChart.canvas.parentNode.appendChild(zoomControls);
 
             const hourlyCtx = document.getElementById('hourlyGainsChart').getContext('2d');
             hourlyGainsChart = new Chart(hourlyCtx, {
@@ -530,9 +574,6 @@
                     newUsersOdo.update(usersGained);
 
                     document.getElementById('lastUpdated').textContent = `Last updated: ${new Date(latestData.timestamp).toLocaleString()}`;
-
-                    userChart.data.labels = data.map(point => new Date(point.timestamp).toLocaleString());
-                    userChart.data.datasets[0].data = data.map(point => parseInt(point.users));
 
                     const hourlyGains = Array(24).fill(0);
                     const hourlyLabels = [];
